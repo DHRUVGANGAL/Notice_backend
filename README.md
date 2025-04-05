@@ -46,7 +46,7 @@ A backend API for a notice board system allowing administrators to create, manag
 
 1. Clone the repository
    ```
-   git clone https://github.com/yourusername/notice-board-backend.git
+   git clone https://github.com/yourusername/notice-board-backend.git](https://github.com/DHRUVGANGAL/Notice_backend.git
    cd notice-board-backend
    ```
 
@@ -71,7 +71,7 @@ A backend API for a notice board system allowing administrators to create, manag
 
 4. Start the server
    ```
-   npm start
+   node index.js
    ```
    or for development with auto-restart:
    ```
@@ -137,7 +137,3 @@ Run the development server with auto-restart:
 ```
 npm run dev
 ```
-
-## License
-
-[MIT](LICENSE)
