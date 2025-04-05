@@ -259,13 +259,45 @@ catch (error) {
 }
 
 
+const getNotices=async(req, res) => {
+  try {
+    const userId = req.userId;
+    
+    const query = { CreaterId: userId };
+
+    const notices = await NoticeModel.find(query).sort({ createdAt: -1 });
+    
+    if (!notices || notices.length === 0) {
+        return res.status(404).json({ 
+            success: false,
+            message: "No notices found" 
+        });
+    }
+    
+    res.json({
+        success: true,
+        count: notices.length,
+        notices: notices
+    });
+} catch (error) {
+    console.error('Error fetching notices:', error);
+    res.status(500).json({ 
+        success: false,
+        message: "Error fetching notices", 
+        error: error.message 
+    });
+}
+
+}
+
 
 
 module.exports = {
   upload,
   createNotice,
   updateNotices,
-  deleteNotices
+  deleteNotices,
+  getNotices
 };
 
 
