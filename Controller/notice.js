@@ -117,55 +117,141 @@ const createNotice = async (req, res) => {
 };
 
 
-
-
-
 const updateNotices = async (req, res) => {
   try {
     const userId = req.userId;
     const noticeId = req.params.id;
     
-    
     if (!noticeId) {
-        return res.status(400).json({ 
-            message: "Invalid input. Notice ID required" 
-        });
+      return res.status(400).json({ 
+        message: "Invalid input. Notice ID required" 
+      });
     }
 
+    // First, get the existing notice to check if we need to replace a file
+    const existingNotice = await NoticeModel.findOne({ _id: noticeId, CreaterId: userId });
+    
+    if (!existingNotice) {
+      return res.status(404).json({ 
+        message: "Notice not found or not authorized to update" 
+      });
+    }
     
     const updateFields = {};
     
-  
+    
     if (req.body.title !== undefined) updateFields.title = req.body.title;
     if (req.body.content !== undefined) updateFields.content = req.body.content;
-    if (req.body.fileUrl !== undefined) updateFields.fileUrl = req.body.fileUrl;
-    if (req.body.fileType !== undefined) updateFields.fileType = req.body.fileType;
     if (req.body.category !== undefined) updateFields.category = req.body.category;
-    if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant;
-    if (req.body.isActive !== undefined) updateFields.isActive = req.body.isActive;
-    if (req.body.expiryDate !== undefined) updateFields.expiryDate = req.body.expiryDate;
+    if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant
     
+  
     
+  
+    if (req.file) {
+      
+      if (existingNotice.fileUrl) {
+        try {
+          
+          const publicId = existingNotice.fileUrl.split('/').pop().split('.')[0];
+          if (publicId) {
+           
+            const resourceType = existingNotice.fileType === 'image' ? 'image' : 'raw';
+            await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+          }
+        } catch (cloudinaryError) {
+          console.error('Error deleting old file from Cloudinary:', cloudinaryError);
+         
+        }
+      }
+      
+      
+      updateFields.fileUrl = req.file.path;
+      
+    
+      const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
+      if (['pdf'].includes(fileExtension)) {
+        updateFields.fileType = 'pdf';
+      } else if (['doc', 'docx'].includes(fileExtension)) {
+        updateFields.fileType = 'doc';
+      } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+        updateFields.fileType = 'image';
+      } else {
+        updateFields.fileType = 'other';
+      }
+    }
+    
+ 
     updateFields.updatedAt = Date.now();
     
    
     const updatedNotice = await NoticeModel.findOneAndUpdate(
-        { _id: noticeId, CreaterId: userId },
-        updateFields,
-        { new: true } 
+      { _id: noticeId, CreaterId: userId },
+      updateFields,
+      { new: true }
     );
     
-    if (!updatedNotice) {
+    res.json({
+      success: true,
+      message: "Notice updated successfully",
+      notice: updatedNotice
+    });
+  } catch (error) {
+    console.error('Notice update error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: "Error updating notice",
+      error: error.message 
+    });
+  }
+};
+
+
+
+const deleteNotices=async(req,res)=>{
+  try {
+    const userId = req.userId;
+    const noticeId = req.params.id;
+    
+   
+    const notice = await NoticeModel.findOne({ _id: noticeId, CreaterId: userId });
+    
+    if (!notice) {
         return res.status(404).json({ 
-            message: "Notice not found or not authorized to update" 
+            success: false,
+            message: "Notice not found or not authorized to delete" 
         });
     }
     
-    res.json(updatedNotice);
-} catch (error) {
-    console.error('Notice update error:', error);
+    
+    if (notice.fileUrl) {
+        try {
+            
+            const publicId = notice.fileUrl.split('/').pop().split('.')[0];
+            if (publicId) {
+                
+                const resourceType = notice.fileType === 'image' ? 'image' : 'raw';
+                await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+            }
+        } catch (cloudinaryError) {
+            console.error('Error deleting file from Cloudinary:', cloudinaryError);
+            
+        }
+    }
+    
+    
+    await NoticeModel.findByIdAndDelete(noticeId);
+    
+    res.json({ 
+        success: true,
+        message: "Notice deleted successfully" 
+    });
+  } 
+catch (error) {
+    console.error('Notice deletion error:', error);
     res.status(500).json({ 
-        message: "Error updating notice",
+        success: false,
+        message: "Error deleting notice", 
         error: error.message 
     });
 }
@@ -174,10 +260,12 @@ const updateNotices = async (req, res) => {
 
 
 
+
 module.exports = {
   upload,
   createNotice,
-  updateNotices
+  updateNotices,
+  deleteNotices
 };
 
 
