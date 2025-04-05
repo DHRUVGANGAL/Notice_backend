@@ -79,3 +79,4 @@ noticeSchema.virtual('isExpired').get(function() {
 const Notice = mongoose.model('Notice', noticeSchema);
 
 module.exports = Notice;
+

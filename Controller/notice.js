@@ -116,7 +116,70 @@ const createNotice = async (req, res) => {
   }
 };
 
+
+
+
+
+const updateNotices = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const noticeId = req.params.id;
+    
+    
+    if (!noticeId) {
+        return res.status(400).json({ 
+            message: "Invalid input. Notice ID required" 
+        });
+    }
+
+    
+    const updateFields = {};
+    
+  
+    if (req.body.title !== undefined) updateFields.title = req.body.title;
+    if (req.body.content !== undefined) updateFields.content = req.body.content;
+    if (req.body.fileUrl !== undefined) updateFields.fileUrl = req.body.fileUrl;
+    if (req.body.fileType !== undefined) updateFields.fileType = req.body.fileType;
+    if (req.body.category !== undefined) updateFields.category = req.body.category;
+    if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant;
+    if (req.body.isActive !== undefined) updateFields.isActive = req.body.isActive;
+    if (req.body.expiryDate !== undefined) updateFields.expiryDate = req.body.expiryDate;
+    
+    
+    updateFields.updatedAt = Date.now();
+    
+   
+    const updatedNotice = await NoticeModel.findOneAndUpdate(
+        { _id: noticeId, CreaterId: userId },
+        updateFields,
+        { new: true } 
+    );
+    
+    if (!updatedNotice) {
+        return res.status(404).json({ 
+            message: "Notice not found or not authorized to update" 
+        });
+    }
+    
+    res.json(updatedNotice);
+} catch (error) {
+    console.error('Notice update error:', error);
+    res.status(500).json({ 
+        message: "Error updating notice",
+        error: error.message 
+    });
+}
+
+}
+
+
+
 module.exports = {
   upload,
-  createNotice
+  createNotice,
+  updateNotices
 };
+
+
+
+
