@@ -20,7 +20,7 @@ const userSchema = new Schema({
     required: true,
     
   },
-  department: {
+  departmentName: {
     type: String,
     required: true,
   }

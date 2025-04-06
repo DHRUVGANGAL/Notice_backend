@@ -12,7 +12,7 @@ const signup = async (req, res) => {
     firstName: z.string(),
     lastName: z.string(),
     departmentName: z.string(),
-    post: z.string()
+    
   });
   
   const data = schema.safeParse(req.body);
@@ -24,7 +24,7 @@ const signup = async (req, res) => {
   }
   
   
-  const { email, password, firstName, lastName, departmentName, post } = data.data;
+  const { email, password, firstName, lastName, departmentName } = data.data;
   
   try {
    
@@ -42,7 +42,7 @@ const signup = async (req, res) => {
       firstName,
       lastName,
       departmentName,
-      post
+      
     });
     
     res.json({

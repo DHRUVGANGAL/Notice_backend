@@ -9,7 +9,7 @@ const adminSchema = new Schema({
     firstName: String,
     lastName: String,
     departmentName: String,
-    post: String
+    
     
 });
 
