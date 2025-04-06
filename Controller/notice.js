@@ -16,7 +16,18 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'notices',
     allowed_formats: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-    resource_type: 'auto' 
+    resource_type: (req, file) => {
+      const extension = file.originalname.split('.').pop().toLowerCase();
+      if (['pdf', 'doc', 'docx'].includes(extension)) {
+        return 'raw';
+      }
+      return 'image';
+    },
+    
+    public_id: (req, file) => {
+      const name = file.originalname.split('.')[0];
+      return `${name}-${Date.now()}`;
+    }
   }
 });
 
@@ -67,7 +78,7 @@ const createNotice = async (req, res) => {
 
     
     if (req.file) {
-      noticeData.fileUrl = req.file.path; 
+      noticeData.fileUrl = req.file.secure_url || req.file.url || req.file.path;
       
       
       const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
