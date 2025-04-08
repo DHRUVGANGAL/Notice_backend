@@ -35,9 +35,100 @@ const storage = new CloudinaryStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 
+    fileSize: 10 * 1024 * 1024
   }
 });
+
+
+// const createNotice = async (req, res) => {
+//   try {
+//     console.log('Request received for notice creation');
+    
+//     const adminId = req.userId;
+//     if (!adminId) {
+//       return res.status(401).json({ message: 'Unauthorized: Admin ID not found' });
+//     }
+    
+//     console.log('Files received:', req.files);
+    
+//     const {
+//       title,
+//       content,
+//       category = 'General',
+//       isImportant = false
+//     } = req.body;
+    
+//     const noticeData = {
+//       title,
+//       content,
+//       CreaterId: adminId,
+//       category,
+//       isImportant: isImportant === 'true' || isImportant === true,
+//       files: []
+//     };
+    
+//     if (req.files && req.files.length > 0) {
+//       noticeData.files = req.files.map(file => {
+//         const fileExtension = file.originalname.split('.').pop().toLowerCase();
+//         let fileType = 'other';
+//         if (['pdf'].includes(fileExtension)) {
+//           fileType = 'pdf';
+//         } else if (['doc', 'docx'].includes(fileExtension)) {
+//           fileType = 'doc';
+//         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+//           fileType = 'image';
+//         }
+        
+//         // Use path directly since that's what Cloudinary is providing
+//         return {
+//           url: file.path,
+//           fileType: fileType,
+//           originalName: file.originalname
+//         };
+//       });
+      
+//       console.log('Files being saved to database:', JSON.stringify(noticeData.files, null, 2));
+//     } else {
+//       console.log('No files to save to database');
+//     }
+    
+//     if (req.body.expiryDate) {
+//       noticeData.expiryDate = req.body.expiryDate;
+//     }
+    
+//     const newNotice = new NoticeModel(noticeData);
+//     console.log('Notice to be saved:', JSON.stringify({
+//       title: newNotice.title,
+//       category: newNotice.category,
+//       isImportant: newNotice.isImportant,
+//       filesCount: newNotice.files ? newNotice.files.length : 0,
+//       hasFiles: newNotice.files && newNotice.files.length > 0
+//     }, null, 2));
+    
+//     await newNotice.save();
+//     console.log('Notice saved successfully with ID:', newNotice._id);
+    
+//     res.status(201).json({
+//       success: true,
+//       message: 'Notice created successfully',
+//       notice: newNotice
+//     });
+//   } catch (error) {
+//     console.error('Error creating notice:', error);
+//     if (error.name === 'ValidationError') {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Validation error',
+//         errors: Object.values(error.errors).map(err => err.message)
+//       });
+//     }
+//     res.status(500).json({
+//       success: false,
+//       message: 'Failed to create notice',
+//       error: error.message
+//     });
+//   }
+// };
 
 const createNotice = async (req, res) => {
   try {
@@ -85,8 +176,8 @@ const createNotice = async (req, res) => {
       });
     }
 
-    if (expiryDate) {
-      noticeData.expiryDate = expiryDate;
+    if (req.body.expiryDate) {
+      noticeData.expiryDate = req.body.expiryDate;
     }
 
     const newNotice = new NoticeModel(noticeData);
@@ -116,6 +207,322 @@ const createNotice = async (req, res) => {
   }
 };
 
+
+// const updateNotices = async (req, res) => {
+//   try {
+//     const userId = req.userId;
+//     const noticeId = req.params.id;
+    
+//     if (!noticeId) {
+//       return res.status(400).json({ 
+//         message: "Invalid input. Notice ID required" 
+//       });
+//     }
+
+    
+//     const existingNotice = await NoticeModel.findOne({ _id: noticeId, CreaterId: userId });
+    
+//     if (!existingNotice) {
+//       return res.status(404).json({ 
+//         message: "Notice not found or not authorized to update" 
+//       });
+//     }
+    
+    
+//     const updateFields = {};
+    
+    
+//     if (req.body.title !== undefined) updateFields.title = req.body.title;
+//     if (req.body.content !== undefined) updateFields.content = req.body.content;
+//     if (req.body.category !== undefined) updateFields.category = req.body.category;
+//     if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant;
+    
+    
+//     const deleteFileFromCloudinary = async (file) => {
+//       try {
+//         const publicId = file.url.split('/').pop().split('.')[0];
+//         if (publicId) {
+//           const resourceType = file.fileType === 'image' ? 'image' : 'raw';
+//           await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+//           console.log(`Deleted file from Cloudinary: ${publicId}`);
+//         }
+//       } catch (cloudinaryError) {
+//         console.error('Error deleting file from Cloudinary:', cloudinaryError);
+//       }
+//     };
+    
+    
+//     const deleteFiles = async (filesToDelete) => {
+//       for (const file of filesToDelete) {
+//         await deleteFileFromCloudinary(file);
+//       }
+//     };
+    
+    
+//     const existingFiles = existingNotice.files || [];
+    
+    
+//     if (req.files && req.files.length > 0) {
+      
+//       let filesToKeep = [];
+      
+      
+//       if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
+        
+//         filesToKeep = existingFiles.filter(file => 
+//           req.body.keepFiles.includes(file._id.toString())
+//         );
+        
+       
+//         const filesToDelete = existingFiles.filter(file => 
+//           !req.body.keepFiles.includes(file._id.toString())
+//         );
+        
+//         await deleteFiles(filesToDelete);
+//       } else if (req.body.removeAllFiles === 'true' || (req.body.keepFiles !== undefined && (!Array.isArray(req.body.keepFiles) || req.body.keepFiles.length === 0))) {
+       
+//         await deleteFiles(existingFiles);
+//         filesToKeep = [];
+//       } else {
+       
+//         filesToKeep = existingFiles;
+//       }
+      
+      
+//       const newFiles = req.files.map(file => {
+//         const fileExtension = file.originalname.split('.').pop().toLowerCase();
+//         let fileType = 'other';
+        
+//         if (['pdf'].includes(fileExtension)) {
+//           fileType = 'pdf';
+//         } else if (['doc', 'docx'].includes(fileExtension)) {
+//           fileType = 'doc';
+//         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+//           fileType = 'image';
+//         }
+        
+//         return {
+//           url: file.secure_url || file.url || file.path,
+//           fileType: fileType,
+//           originalName: file.originalname,
+//           uploadedAt: new Date()
+//         };
+//       });
+      
+      
+//       updateFields.files = [...filesToKeep, ...newFiles];
+//     } else if (req.body.keepFiles !== undefined) {
+      
+      
+     
+//       if (!Array.isArray(req.body.keepFiles) || req.body.keepFiles.length === 0) {
+        
+//         await deleteFiles(existingFiles);
+//         updateFields.files = [];
+//       } else {
+        
+//         const filesToKeep = existingFiles.filter(file => 
+//           req.body.keepFiles.includes(file._id.toString())
+//         );
+        
+//         const filesToDelete = existingFiles.filter(file => 
+//           !req.body.keepFiles.includes(file._id.toString())
+//         );
+        
+//         await deleteFiles(filesToDelete);
+//         updateFields.files = filesToKeep;
+//       }
+//     } else if (req.body.removeAllFiles === 'true') {
+      
+//       await deleteFiles(existingFiles);
+//       updateFields.files = [];
+//     }
+    
+    
+//     updateFields.updatedAt = Date.now();
+    
+   
+//     const updatedNotice = await NoticeModel.findOneAndUpdate(
+//       { _id: noticeId, CreaterId: userId },
+//       updateFields,
+//       { new: true }
+//     );
+    
+//     res.json({
+//       success: true,
+//       message: "Notice updated successfully",
+//       notice: updatedNotice
+//     });
+//   } catch (error) {
+//     console.error('Notice update error:', error);
+//     res.status(500).json({ 
+//       success: false,
+//       message: "Error updating notice",
+//       error: error.message 
+//     });
+//   }
+// };
+// const updateNotices = async (req, res) => {
+//   try {
+//     const userId = req.userId;
+//     const noticeId = req.params.id;
+    
+//     if (!noticeId) {
+//       return res.status(400).json({ 
+//         message: "Invalid input. Notice ID required" 
+//       });
+//     }
+
+    
+//     const existingNotice = await NoticeModel.findOne({ _id: noticeId, CreaterId: userId });
+    
+//     if (!existingNotice) {
+//       return res.status(404).json({ 
+//         message: "Notice not found or not authorized to update" 
+//       });
+//     }
+    
+//     const updateFields = {};
+    
+//     if (req.body.title !== undefined) updateFields.title = req.body.title;
+//     if (req.body.content !== undefined) updateFields.content = req.body.content;
+//     if (req.body.category !== undefined) updateFields.category = req.body.category;
+//     if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant;
+    
+   
+//     if (req.files && req.files.length > 0) {
+      
+//       let existingFiles = existingNotice.files || [];
+     
+//     if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
+  
+//       const filesToRemove = existingFiles.filter(file => 
+//             !req.body.keepFiles.includes(file._id.toString())
+//           );
+  
+  
+//      for (const file of filesToRemove) {
+//     try {
+//       const publicId = file.url.split('/').pop().split('.')[0];
+//       if (publicId) {
+//         const resourceType = file.fileType === 'image' ? 'image' : 'raw';
+//         await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+//         console.log(`Deleted file from Cloudinary: ${publicId}`);
+//       }
+//     } catch (cloudinaryError) {
+//       console.error('Error deleting file from Cloudinary:', cloudinaryError);
+//     }
+//   }
+//       existingFiles = existingFiles.filter(file =>
+//        req.body.keepFiles.includes(file._id.toString())
+//        );
+//        }
+      
+//        else if (req.body.removeAllFiles === 'true') {
+//         for (const file of existingFiles) {
+//           try {
+//             const publicId = file.url.split('/').pop().split('.')[0];
+//             if (publicId) {
+//               const resourceType = file.fileType === 'image' ? 'image' : 'raw';
+//               await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+//             }
+//           } catch (cloudinaryError) {
+//             console.error('Error deleting file from Cloudinary:', cloudinaryError);
+//           }
+//         }
+//         existingFiles = [];
+//       }
+      
+      
+//       const newFiles = req.files.map(file => {
+//         const fileExtension = file.originalname.split('.').pop().toLowerCase();
+//         let fileType = 'other';
+        
+//         if (['pdf'].includes(fileExtension)) {
+//           fileType = 'pdf';
+//         } else if (['doc', 'docx'].includes(fileExtension)) {
+//           fileType = 'doc';
+//         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+//           fileType = 'image';
+//         }
+        
+//         return {
+//           url: file.secure_url || file.url || file.path,
+//           fileType: fileType,
+//           originalName: file.originalname,
+//           uploadedAt: new Date()
+//         };
+//       });
+      
+     
+//       updateFields.files = [...existingFiles, ...newFiles];
+//     } else if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
+      
+//       const existingFiles = existingNotice.files || [];
+//       const filesToKeep = existingFiles.filter(file => 
+//         req.body.keepFiles.includes(file._id.toString())
+//       );
+      
+     
+//       const filesToDelete = existingFiles.filter(file => 
+//         !req.body.keepFiles.includes(file._id.toString())
+//       );
+      
+//       for (const file of filesToDelete) {
+//         try {
+//           const publicId = file.url.split('/').pop().split('.')[0];
+//           if (publicId) {
+//             const resourceType = file.fileType === 'image' ? 'image' : 'raw';
+//             await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+//           }
+//         } catch (cloudinaryError) {
+//           console.error('Error deleting file from Cloudinary:', cloudinaryError);
+//         }
+//       }
+      
+//       updateFields.files = filesToKeep;
+//     } else if (req.body.removeAllFiles === 'true') {
+     
+//       const existingFiles = existingNotice.files || [];
+      
+     
+//       for (const file of existingFiles) {
+//         try {
+//           const publicId = file.url.split('/').pop().split('.')[0];
+//           if (publicId) {
+//             const resourceType = file.fileType === 'image' ? 'image' : 'raw';
+//             await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+//           }
+//         } catch (cloudinaryError) {
+//           console.error('Error deleting file from Cloudinary:', cloudinaryError);
+//         }
+//       }
+      
+//       updateFields.files = [];
+//     }
+    
+//     updateFields.updatedAt = Date.now();
+    
+//     const updatedNotice = await NoticeModel.findOneAndUpdate(
+//       { _id: noticeId, CreaterId: userId },
+//       updateFields,
+//       { new: true }
+//     );
+    
+//     res.json({
+//       success: true,
+//       message: "Notice updated successfully",
+//       notice: updatedNotice
+//     });
+//   } catch (error) {
+//     console.error('Notice update error:', error);
+//     res.status(500).json({ 
+//       success: false,
+//       message: "Error updating notice",
+//       error: error.message 
+//     });
+//   }
+// };
 const updateNotices = async (req, res) => {
   try {
     const userId = req.userId;
@@ -127,7 +534,6 @@ const updateNotices = async (req, res) => {
       });
     }
 
-    
     const existingNotice = await NoticeModel.findOne({ _id: noticeId, CreaterId: userId });
     
     if (!existingNotice) {
@@ -143,36 +549,50 @@ const updateNotices = async (req, res) => {
     if (req.body.category !== undefined) updateFields.category = req.body.category;
     if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant;
     
-   
+    
     if (req.files && req.files.length > 0) {
-      
       let existingFiles = existingNotice.files || [];
-     
-    if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
-  
-      const filesToRemove = existingFiles.filter(file => 
-            !req.body.keepFiles.includes(file._id.toString())
-          );
-  
-  
-     for (const file of filesToRemove) {
-    try {
-      const publicId = file.url.split('/').pop().split('.')[0];
-      if (publicId) {
-        const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-        await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-        console.log(`Deleted file from Cloudinary: ${publicId}`);
-      }
-    } catch (cloudinaryError) {
-      console.error('Error deleting file from Cloudinary:', cloudinaryError);
-    }
-  }
-      existingFiles = existingFiles.filter(file =>
-       req.body.keepFiles.includes(file._id.toString())
-       );
-       }
       
-       else if (req.body.removeAllFiles === 'true') {
+      
+      if (req.body.keepFiles && Array.isArray(req.body.keepFiles) && req.body.keepFiles.length === 0) {
+        
+        for (const file of existingFiles) {
+          try {
+            const publicId = file.url.split('/').pop().split('.')[0];
+            if (publicId) {
+              const resourceType = file.fileType === 'image' ? 'image' : 'raw';
+              await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+              console.log(`Deleted file from Cloudinary: ${publicId}`);
+            }
+          } catch (cloudinaryError) {
+            console.error('Error deleting file from Cloudinary:', cloudinaryError);
+          }
+        }
+        existingFiles = [];
+      } 
+      
+      else if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
+        const filesToRemove = existingFiles.filter(file => 
+          !req.body.keepFiles.includes(file._id.toString())
+        );
+        
+        for (const file of filesToRemove) {
+          try {
+            const publicId = file.url.split('/').pop().split('.')[0];
+            if (publicId) {
+              const resourceType = file.fileType === 'image' ? 'image' : 'raw';
+              await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+              console.log(`Deleted file from Cloudinary: ${publicId}`);
+            }
+          } catch (cloudinaryError) {
+            console.error('Error deleting file from Cloudinary:', cloudinaryError);
+          }
+        }
+        existingFiles = existingFiles.filter(file =>
+          req.body.keepFiles.includes(file._id.toString())
+        );
+      }
+      else if (req.body.removeAllFiles === 'true') {
         for (const file of existingFiles) {
           try {
             const publicId = file.url.split('/').pop().split('.')[0];
@@ -186,7 +606,6 @@ const updateNotices = async (req, res) => {
         }
         existingFiles = [];
       }
-      
       
       const newFiles = req.files.map(file => {
         const fileExtension = file.originalname.split('.').pop().toLowerCase();
@@ -208,38 +627,55 @@ const updateNotices = async (req, res) => {
         };
       });
       
-     
       updateFields.files = [...existingFiles, ...newFiles];
-    } else if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
-      
-      const existingFiles = existingNotice.files || [];
-      const filesToKeep = existingFiles.filter(file => 
-        req.body.keepFiles.includes(file._id.toString())
-      );
-      
+    } 
+   
+    else if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
      
-      const filesToDelete = existingFiles.filter(file => 
-        !req.body.keepFiles.includes(file._id.toString())
-      );
-      
-      for (const file of filesToDelete) {
-        try {
-          const publicId = file.url.split('/').pop().split('.')[0];
-          if (publicId) {
-            const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-            await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+      if (req.body.keepFiles.length === 0) {
+        
+        const existingFiles = existingNotice.files || [];
+        for (const file of existingFiles) {
+          try {
+            const publicId = file.url.split('/').pop().split('.')[0];
+            if (publicId) {
+              const resourceType = file.fileType === 'image' ? 'image' : 'raw';
+              await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+              console.log(`Deleted all files as keepFiles is empty`);
+            }
+          } catch (cloudinaryError) {
+            console.error('Error deleting file from Cloudinary:', cloudinaryError);
           }
-        } catch (cloudinaryError) {
-          console.error('Error deleting file from Cloudinary:', cloudinaryError);
         }
+        updateFields.files = [];
+      } else {
+        
+        const existingFiles = existingNotice.files || [];
+        const filesToKeep = existingFiles.filter(file => 
+          req.body.keepFiles.includes(file._id.toString())
+        );
+        
+        const filesToDelete = existingFiles.filter(file => 
+          !req.body.keepFiles.includes(file._id.toString())
+        );
+        
+        for (const file of filesToDelete) {
+          try {
+            const publicId = file.url.split('/').pop().split('.')[0];
+            if (publicId) {
+              const resourceType = file.fileType === 'image' ? 'image' : 'raw';
+              await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+            }
+          } catch (cloudinaryError) {
+            console.error('Error deleting file from Cloudinary:', cloudinaryError);
+          }
+        }
+        
+        updateFields.files = filesToKeep;
       }
-      
-      updateFields.files = filesToKeep;
     } else if (req.body.removeAllFiles === 'true') {
-     
       const existingFiles = existingNotice.files || [];
       
-     
       for (const file of existingFiles) {
         try {
           const publicId = file.url.split('/').pop().split('.')[0];
@@ -277,7 +713,6 @@ const updateNotices = async (req, res) => {
     });
   }
 };
-
 
 const deleteNotices = async(req, res) => {
   try {

@@ -74,6 +74,7 @@ const signin = async (req, res) => {
   
   const { email, password } = data.data;
   
+  
   try {
     const user = await admin.findOne({ email });
     
@@ -111,21 +112,55 @@ const signin = async (req, res) => {
 
 
 
-const authMiddleware = async(req, res, next)=> {
-    const token = req.headers.token;
-    const decoded = jwt.verify(token, JWT_ADMIN_PASSWORD);
+// const authMiddleware = async(req, res, next)=> {
+//     const token = req.headers.token;
+//     const decoded = jwt.verify(token, JWT_ADMIN_PASSWORD);
     
 
-    if (decoded) {
-        req.userId = decoded.id;
-        next()
-    } else {
-        res.status(403).json({
-            message: "You are not signed in"
-        })
-    }
+//     if (decoded) {
+//         req.userId = decoded.id;
+//         next()
+//     } else {
+//         res.status(403).json({
+//             message: "You are not signed in"
+//         })
+//     }
 
+// }
+
+
+
+
+const authMiddleware = async(req, res, next) => {
+  try {
+    // Get the Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        message: "No token provided"
+      });
+    }
+    
+    // Extract the token (remove the 'Bearer ' prefix)
+    const token = authHeader.split(' ')[1];
+    
+    // Verify the token
+    const decoded = jwt.verify(token, JWT_ADMIN_PASSWORD);
+    
+    // Set the user ID in the request object
+    req.userId = decoded.id;
+    
+    // Proceed to the next middleware or route handler
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(403).json({
+      message: "Invalid or expired token"
+    });
+  }
 }
+
 
 
 

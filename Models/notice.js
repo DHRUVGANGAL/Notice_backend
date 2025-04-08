@@ -2,6 +2,22 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 
+const fileSchema = new Schema({
+  url: {
+    type: String,
+    required: true
+  },
+  fileType: {
+    type: String,
+    enum: ['pdf', 'doc', 'image', 'other'],
+    default: 'other'
+  },
+  originalName: {
+    type: String,
+    required: true
+  }
+});
+
 const noticeSchema = new Schema({
   title: {
     type: String,
@@ -10,13 +26,17 @@ const noticeSchema = new Schema({
   },
   content: {
     type: String,
-    required: true
+    required: false
   },
   CreaterId: {
     type: Schema.Types.ObjectId,
-    ref: 'User',  
+    ref: 'User',
     required: true
   },
+
+  files: [fileSchema],
+  
+  
   fileUrl: {
     type: String,
     default: null
@@ -49,7 +69,6 @@ const noticeSchema = new Schema({
   expiryDate: {
     type: Date,
     default: function() {
-      
       const date = new Date();
       date.setDate(date.getDate() + 30);
       return date;
@@ -57,26 +76,19 @@ const noticeSchema = new Schema({
   }
 });
 
-
-
 noticeSchema.index({ userId: 1 });
 noticeSchema.index({ createdAt: -1 });
 noticeSchema.index({ category: 1, createdAt: -1 });
 noticeSchema.index({ isImportant: 1, createdAt: -1 });
-
 
 noticeSchema.pre('findOneAndUpdate', function(next) {
   this.set({ updatedAt: Date.now() });
   next();
 });
 
-
 noticeSchema.virtual('isExpired').get(function() {
   return this.expiryDate < new Date();
 });
 
-
 const Notice = mongoose.model('Notice', noticeSchema);
-
 module.exports = Notice;
-
