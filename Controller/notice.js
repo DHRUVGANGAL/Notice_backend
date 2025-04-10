@@ -43,98 +43,9 @@ const upload = multer({
 });
 
 
-// const createNotice = async (req, res) => {
-//   try {
-//     console.log('Request received for notice creation');
-    
-//     const adminId = req.userId;
-//     if (!adminId) {
-//       return res.status(401).json({ message: 'Unauthorized: Admin ID not found' });
-//     }
-    
-//     console.log('Files received:', req.files);
-    
-//     const {
-//       title,
-//       content,
-//       category = 'General',
-//       isImportant = false
-//     } = req.body;
-    
-//     const noticeData = {
-//       title,
-//       content,
-//       CreaterId: adminId,
-//       category,
-//       isImportant: isImportant === 'true' || isImportant === true,
-//       files: []
-//     };
-    
-//     if (req.files && req.files.length > 0) {
-//       noticeData.files = req.files.map(file => {
-//         const fileExtension = file.originalname.split('.').pop().toLowerCase();
-//         let fileType = 'other';
-//         if (['pdf'].includes(fileExtension)) {
-//           fileType = 'pdf';
-//         } else if (['doc', 'docx'].includes(fileExtension)) {
-//           fileType = 'doc';
-//         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
-//           fileType = 'image';
-//         }
-        
-//         // Use path directly since that's what Cloudinary is providing
-//         return {
-//           url: file.path,
-//           fileType: fileType,
-//           originalName: file.originalname
-//         };
-//       });
-      
-//       console.log('Files being saved to database:', JSON.stringify(noticeData.files, null, 2));
-//     } else {
-//       console.log('No files to save to database');
-//     }
-    
-//     if (req.body.expiryDate) {
-//       noticeData.expiryDate = req.body.expiryDate;
-//     }
-    
-//     const newNotice = new NoticeModel(noticeData);
-//     console.log('Notice to be saved:', JSON.stringify({
-//       title: newNotice.title,
-//       category: newNotice.category,
-//       isImportant: newNotice.isImportant,
-//       filesCount: newNotice.files ? newNotice.files.length : 0,
-//       hasFiles: newNotice.files && newNotice.files.length > 0
-//     }, null, 2));
-    
-//     await newNotice.save();
-//     console.log('Notice saved successfully with ID:', newNotice._id);
-    
-//     res.status(201).json({
-//       success: true,
-//       message: 'Notice created successfully',
-//       notice: newNotice
-//     });
-//   } catch (error) {
-//     console.error('Error creating notice:', error);
-//     if (error.name === 'ValidationError') {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Validation error',
-//         errors: Object.values(error.errors).map(err => err.message)
-//       });
-//     }
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to create notice',
-//       error: error.message
-//     });
-//   }
-// };
 
 
-// controllers/noticeController.js - Fixed file type detection
+
 const createNotice = async (req, res) => {
   try {
     const adminId = req.userId;
@@ -163,7 +74,7 @@ const createNotice = async (req, res) => {
         const fileExtension = file.originalname.split('.').pop().toLowerCase();
         let fileType = 'other';
         
-        // Improved file type detection
+       
         if (['pdf'].includes(fileExtension)) {
           fileType = 'pdf';
         } else if (['doc', 'docx'].includes(fileExtension)) {
@@ -172,7 +83,7 @@ const createNotice = async (req, res) => {
           fileType = 'image';
         }
         
-        // For Cloudinary URLs, check content type if available
+       
         if (file.resource_type === 'image' || 
             (file.mimetype && file.mimetype.startsWith('image/'))) {
           fileType = 'image';
@@ -185,7 +96,7 @@ const createNotice = async (req, res) => {
         };
       });
       
-      // Set a main file type for the notice based on first file
+      
       if (noticeData.files.length > 0) {
         noticeData.fileType = noticeData.files[0].fileType;
         noticeData.fileUrl = noticeData.files[0].url;
@@ -222,589 +133,7 @@ const createNotice = async (req, res) => {
 };
 
 
-// const createNotice = async (req, res) => {
-//   try {
-//     const adminId = req.userId;
-    
-//     if (!adminId) {
-//       return res.status(401).json({ message: 'Unauthorized: Admin ID not found' });
-//     }
 
-//     const {
-//       title,
-//       content,
-//       category = 'General',
-//       isImportant = false
-//     } = req.body;
-
-//     const noticeData = {
-//       title,
-//       content,
-//       CreaterId: adminId,
-//       category,
-//       isImportant: isImportant === 'true' || isImportant === true,
-//       files: [] 
-//     };
-
- 
-//     if (req.files && req.files.length > 0) {
-//       noticeData.files = req.files.map(file => {
-//         const fileExtension = file.originalname.split('.').pop().toLowerCase();
-//         let fileType = 'other';
-        
-//         if (['pdf'].includes(fileExtension)) {
-//           fileType = 'pdf';
-//         } else if (['doc', 'docx'].includes(fileExtension)) {
-//           fileType = 'doc';
-//         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
-//           fileType = 'image';
-//         }
-        
-//         return {
-//           url: file.secure_url || file.url || file.path,
-//           fileType: fileType,
-//           originalName: file.originalname
-//         };
-//       });
-//     }
-
-//     if (req.body.expiryDate) {
-//       noticeData.expiryDate = req.body.expiryDate;
-//     }
-
-//     const newNotice = new NoticeModel(noticeData);
-//     await newNotice.save();
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'Notice created successfully',
-//       notice: newNotice
-//     });
-//   } catch (error) {
-//     console.error('Error creating notice:', error);
-    
-//     if (error.name === 'ValidationError') {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Validation error',
-//         errors: Object.values(error.errors).map(err => err.message)
-//       });
-//     }
-    
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to create notice',
-//       error: error.message
-//     });
-//   }
-// };
-
-
-// const updateNotices = async (req, res) => {
-//   try {
-//     const userId = req.userId;
-//     const noticeId = req.params.id;
-    
-//     if (!noticeId) {
-//       return res.status(400).json({ 
-//         message: "Invalid input. Notice ID required" 
-//       });
-//     }
-
-    
-//     const existingNotice = await NoticeModel.findOne({ _id: noticeId, CreaterId: userId });
-    
-//     if (!existingNotice) {
-//       return res.status(404).json({ 
-//         message: "Notice not found or not authorized to update" 
-//       });
-//     }
-    
-    
-//     const updateFields = {};
-    
-    
-//     if (req.body.title !== undefined) updateFields.title = req.body.title;
-//     if (req.body.content !== undefined) updateFields.content = req.body.content;
-//     if (req.body.category !== undefined) updateFields.category = req.body.category;
-//     if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant;
-    
-    
-//     const deleteFileFromCloudinary = async (file) => {
-//       try {
-//         const publicId = file.url.split('/').pop().split('.')[0];
-//         if (publicId) {
-//           const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//           await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//           console.log(`Deleted file from Cloudinary: ${publicId}`);
-//         }
-//       } catch (cloudinaryError) {
-//         console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//       }
-//     };
-    
-    
-//     const deleteFiles = async (filesToDelete) => {
-//       for (const file of filesToDelete) {
-//         await deleteFileFromCloudinary(file);
-//       }
-//     };
-    
-    
-//     const existingFiles = existingNotice.files || [];
-    
-    
-//     if (req.files && req.files.length > 0) {
-      
-//       let filesToKeep = [];
-      
-      
-//       if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
-        
-//         filesToKeep = existingFiles.filter(file => 
-//           req.body.keepFiles.includes(file._id.toString())
-//         );
-        
-       
-//         const filesToDelete = existingFiles.filter(file => 
-//           !req.body.keepFiles.includes(file._id.toString())
-//         );
-        
-//         await deleteFiles(filesToDelete);
-//       } else if (req.body.removeAllFiles === 'true' || (req.body.keepFiles !== undefined && (!Array.isArray(req.body.keepFiles) || req.body.keepFiles.length === 0))) {
-       
-//         await deleteFiles(existingFiles);
-//         filesToKeep = [];
-//       } else {
-       
-//         filesToKeep = existingFiles;
-//       }
-      
-      
-//       const newFiles = req.files.map(file => {
-//         const fileExtension = file.originalname.split('.').pop().toLowerCase();
-//         let fileType = 'other';
-        
-//         if (['pdf'].includes(fileExtension)) {
-//           fileType = 'pdf';
-//         } else if (['doc', 'docx'].includes(fileExtension)) {
-//           fileType = 'doc';
-//         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
-//           fileType = 'image';
-//         }
-        
-//         return {
-//           url: file.secure_url || file.url || file.path,
-//           fileType: fileType,
-//           originalName: file.originalname,
-//           uploadedAt: new Date()
-//         };
-//       });
-      
-      
-//       updateFields.files = [...filesToKeep, ...newFiles];
-//     } else if (req.body.keepFiles !== undefined) {
-      
-      
-     
-//       if (!Array.isArray(req.body.keepFiles) || req.body.keepFiles.length === 0) {
-        
-//         await deleteFiles(existingFiles);
-//         updateFields.files = [];
-//       } else {
-        
-//         const filesToKeep = existingFiles.filter(file => 
-//           req.body.keepFiles.includes(file._id.toString())
-//         );
-        
-//         const filesToDelete = existingFiles.filter(file => 
-//           !req.body.keepFiles.includes(file._id.toString())
-//         );
-        
-//         await deleteFiles(filesToDelete);
-//         updateFields.files = filesToKeep;
-//       }
-//     } else if (req.body.removeAllFiles === 'true') {
-      
-//       await deleteFiles(existingFiles);
-//       updateFields.files = [];
-//     }
-    
-    
-//     updateFields.updatedAt = Date.now();
-    
-   
-//     const updatedNotice = await NoticeModel.findOneAndUpdate(
-//       { _id: noticeId, CreaterId: userId },
-//       updateFields,
-//       { new: true }
-//     );
-    
-//     res.json({
-//       success: true,
-//       message: "Notice updated successfully",
-//       notice: updatedNotice
-//     });
-//   } catch (error) {
-//     console.error('Notice update error:', error);
-//     res.status(500).json({ 
-//       success: false,
-//       message: "Error updating notice",
-//       error: error.message 
-//     });
-//   }
-// };
-// const updateNotices = async (req, res) => {
-//   try {
-//     const userId = req.userId;
-//     const noticeId = req.params.id;
-    
-//     if (!noticeId) {
-//       return res.status(400).json({ 
-//         message: "Invalid input. Notice ID required" 
-//       });
-//     }
-
-    
-//     const existingNotice = await NoticeModel.findOne({ _id: noticeId, CreaterId: userId });
-    
-//     if (!existingNotice) {
-//       return res.status(404).json({ 
-//         message: "Notice not found or not authorized to update" 
-//       });
-//     }
-    
-//     const updateFields = {};
-    
-//     if (req.body.title !== undefined) updateFields.title = req.body.title;
-//     if (req.body.content !== undefined) updateFields.content = req.body.content;
-//     if (req.body.category !== undefined) updateFields.category = req.body.category;
-//     if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant;
-    
-   
-//     if (req.files && req.files.length > 0) {
-      
-//       let existingFiles = existingNotice.files || [];
-     
-//     if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
-  
-//       const filesToRemove = existingFiles.filter(file => 
-//             !req.body.keepFiles.includes(file._id.toString())
-//           );
-  
-  
-//      for (const file of filesToRemove) {
-//     try {
-//       const publicId = file.url.split('/').pop().split('.')[0];
-//       if (publicId) {
-//         const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//         await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//         console.log(`Deleted file from Cloudinary: ${publicId}`);
-//       }
-//     } catch (cloudinaryError) {
-//       console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//     }
-//   }
-//       existingFiles = existingFiles.filter(file =>
-//        req.body.keepFiles.includes(file._id.toString())
-//        );
-//        }
-      
-//        else if (req.body.removeAllFiles === 'true') {
-//         for (const file of existingFiles) {
-//           try {
-//             const publicId = file.url.split('/').pop().split('.')[0];
-//             if (publicId) {
-//               const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//               await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//             }
-//           } catch (cloudinaryError) {
-//             console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//           }
-//         }
-//         existingFiles = [];
-//       }
-      
-      
-//       const newFiles = req.files.map(file => {
-//         const fileExtension = file.originalname.split('.').pop().toLowerCase();
-//         let fileType = 'other';
-        
-//         if (['pdf'].includes(fileExtension)) {
-//           fileType = 'pdf';
-//         } else if (['doc', 'docx'].includes(fileExtension)) {
-//           fileType = 'doc';
-//         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
-//           fileType = 'image';
-//         }
-        
-//         return {
-//           url: file.secure_url || file.url || file.path,
-//           fileType: fileType,
-//           originalName: file.originalname,
-//           uploadedAt: new Date()
-//         };
-//       });
-      
-     
-//       updateFields.files = [...existingFiles, ...newFiles];
-//     } else if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
-      
-//       const existingFiles = existingNotice.files || [];
-//       const filesToKeep = existingFiles.filter(file => 
-//         req.body.keepFiles.includes(file._id.toString())
-//       );
-      
-     
-//       const filesToDelete = existingFiles.filter(file => 
-//         !req.body.keepFiles.includes(file._id.toString())
-//       );
-      
-//       for (const file of filesToDelete) {
-//         try {
-//           const publicId = file.url.split('/').pop().split('.')[0];
-//           if (publicId) {
-//             const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//             await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//           }
-//         } catch (cloudinaryError) {
-//           console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//         }
-//       }
-      
-//       updateFields.files = filesToKeep;
-//     } else if (req.body.removeAllFiles === 'true') {
-     
-//       const existingFiles = existingNotice.files || [];
-      
-     
-//       for (const file of existingFiles) {
-//         try {
-//           const publicId = file.url.split('/').pop().split('.')[0];
-//           if (publicId) {
-//             const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//             await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//           }
-//         } catch (cloudinaryError) {
-//           console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//         }
-//       }
-      
-//       updateFields.files = [];
-//     }
-    
-//     updateFields.updatedAt = Date.now();
-    
-//     const updatedNotice = await NoticeModel.findOneAndUpdate(
-//       { _id: noticeId, CreaterId: userId },
-//       updateFields,
-//       { new: true }
-//     );
-    
-//     res.json({
-//       success: true,
-//       message: "Notice updated successfully",
-//       notice: updatedNotice
-//     });
-//   } catch (error) {
-//     console.error('Notice update error:', error);
-//     res.status(500).json({ 
-//       success: false,
-//       message: "Error updating notice",
-//       error: error.message 
-//     });
-//   }
-// };
-// const updateNotices = async (req, res) => {
-//   try {
-//     const userId = req.userId;
-//     const noticeId = req.params.id;
-    
-//     if (!noticeId) {
-//       return res.status(400).json({ 
-//         message: "Invalid input. Notice ID required" 
-//       });
-//     }
-
-//     const existingNotice = await NoticeModel.findOne({ _id: noticeId, CreaterId: userId });
-    
-//     if (!existingNotice) {
-//       return res.status(404).json({ 
-//         message: "Notice not found or not authorized to update" 
-//       });
-//     }
-    
-//     const updateFields = {};
-    
-//     if (req.body.title !== undefined) updateFields.title = req.body.title;
-//     if (req.body.content !== undefined) updateFields.content = req.body.content;
-//     if (req.body.category !== undefined) updateFields.category = req.body.category;
-//     if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant;
-    
-    
-//     if (req.files && req.files.length > 0) {
-//       let existingFiles = existingNotice.files || [];
-      
-      
-//       if (req.body.keepFiles && Array.isArray(req.body.keepFiles) && req.body.keepFiles.length === 0) {
-        
-//         for (const file of existingFiles) {
-//           try {
-//             const publicId = file.url.split('/').pop().split('.')[0];
-//             if (publicId) {
-//               const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//               await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//               console.log(`Deleted file from Cloudinary: ${publicId}`);
-//             }
-//           } catch (cloudinaryError) {
-//             console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//           }
-//         }
-//         existingFiles = [];
-//       } 
-      
-//       else if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
-//         const filesToRemove = existingFiles.filter(file => 
-//           !req.body.keepFiles.includes(file._id.toString())
-//         );
-        
-//         for (const file of filesToRemove) {
-//           try {
-//             const publicId = file.url.split('/').pop().split('.')[0];
-//             if (publicId) {
-//               const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//               await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//               console.log(`Deleted file from Cloudinary: ${publicId}`);
-//             }
-//           } catch (cloudinaryError) {
-//             console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//           }
-//         }
-//         existingFiles = existingFiles.filter(file =>
-//           req.body.keepFiles.includes(file._id.toString())
-//         );
-//       }
-//       else if (req.body.removeAllFiles === 'true') {
-//         for (const file of existingFiles) {
-//           try {
-//             const publicId = file.url.split('/').pop().split('.')[0];
-//             if (publicId) {
-//               const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//               await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//             }
-//           } catch (cloudinaryError) {
-//             console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//           }
-//         }
-//         existingFiles = [];
-//       }
-      
-//       const newFiles = req.files.map(file => {
-//         const fileExtension = file.originalname.split('.').pop().toLowerCase();
-//         let fileType = 'other';
-        
-//         if (['pdf'].includes(fileExtension)) {
-//           fileType = 'pdf';
-//         } else if (['doc', 'docx'].includes(fileExtension)) {
-//           fileType = 'doc';
-//         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
-//           fileType = 'image';
-//         }
-        
-//         return {
-//           url: file.secure_url || file.url || file.path,
-//           fileType: fileType,
-//           originalName: file.originalname,
-//           uploadedAt: new Date()
-//         };
-//       });
-      
-//       updateFields.files = [...existingFiles, ...newFiles];
-//     } 
-   
-//     else if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
-     
-//       if (req.body.keepFiles.length === 0) {
-        
-//         const existingFiles = existingNotice.files || [];
-//         for (const file of existingFiles) {
-//           try {
-//             const publicId = file.url.split('/').pop().split('.')[0];
-//             if (publicId) {
-//               const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//               await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//               console.log(`Deleted all files as keepFiles is empty`);
-//             }
-//           } catch (cloudinaryError) {
-//             console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//           }
-//         }
-//         updateFields.files = [];
-//       } else {
-        
-//         const existingFiles = existingNotice.files || [];
-//         const filesToKeep = existingFiles.filter(file => 
-//           req.body.keepFiles.includes(file._id.toString())
-//         );
-        
-//         const filesToDelete = existingFiles.filter(file => 
-//           !req.body.keepFiles.includes(file._id.toString())
-//         );
-        
-//         for (const file of filesToDelete) {
-//           try {
-//             const publicId = file.url.split('/').pop().split('.')[0];
-//             if (publicId) {
-//               const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//               await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//             }
-//           } catch (cloudinaryError) {
-//             console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//           }
-//         }
-        
-//         updateFields.files = filesToKeep;
-//       }
-//     } else if (req.body.removeAllFiles === 'true') {
-//       const existingFiles = existingNotice.files || [];
-      
-//       for (const file of existingFiles) {
-//         try {
-//           const publicId = file.url.split('/').pop().split('.')[0];
-//           if (publicId) {
-//             const resourceType = file.fileType === 'image' ? 'image' : 'raw';
-//             await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
-//           }
-//         } catch (cloudinaryError) {
-//           console.error('Error deleting file from Cloudinary:', cloudinaryError);
-//         }
-//       }
-      
-//       updateFields.files = [];
-//     }
-    
-//     updateFields.updatedAt = Date.now();
-    
-//     const updatedNotice = await NoticeModel.findOneAndUpdate(
-//       { _id: noticeId, CreaterId: userId },
-//       updateFields,
-//       { new: true }
-//     );
-    
-//     res.json({
-//       success: true,
-//       message: "Notice updated successfully",
-//       notice: updatedNotice
-//     });
-//   } catch (error) {
-//     console.error('Notice update error:', error);
-//     res.status(500).json({ 
-//       success: false,
-//       message: "Error updating notice",
-//       error: error.message 
-//     });
-//   }
-// };
 const updateNotices = async (req, res) => {
   try {
     const userId = req.userId;
@@ -829,12 +158,12 @@ const updateNotices = async (req, res) => {
     if (req.body.category !== undefined) updateFields.category = req.body.category;
     if (req.body.isImportant !== undefined) updateFields.isImportant = req.body.isImportant;
     
-    // Handle file management
+    
     let existingFiles = existingNotice.files || [];
     
-    // Case 1: Remove all files
+   
     if (req.body.removeAllFiles === 'true') {
-      // Delete all existing files from Cloudinary
+      
       for (const file of existingFiles) {
         try {
           const publicId = file.url.split('/').slice(-1)[0].split('.')[0];
@@ -848,7 +177,7 @@ const updateNotices = async (req, res) => {
         }
       }
       
-      // Also delete the legacy fileUrl if it exists
+     
       if (existingNotice.fileUrl) {
         try {
           const publicId = existingNotice.fileUrl.split('/').slice(-1)[0].split('.')[0];
@@ -862,16 +191,16 @@ const updateNotices = async (req, res) => {
         }
       }
       
-      // Clear both the files array and legacy fileUrl fields
+     
       updateFields.files = [];
       updateFields.fileUrl = null;
       updateFields.fileType = 'other';
     }
-    // Case 2: Keep only selected files (partial deletion)
+   
     else if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
-      // If keepFiles is an empty array, delete all files
+      
       if (req.body.keepFiles.length === 0) {
-        // Delete all existing files from Cloudinary
+        
         for (const file of existingFiles) {
           try {
             const publicId = file.url.split('/').slice(-1)[0].split('.')[0];
@@ -885,7 +214,7 @@ const updateNotices = async (req, res) => {
           }
         }
         
-        // Also delete the legacy fileUrl if it exists
+     
         if (existingNotice.fileUrl) {
           try {
             const publicId = existingNotice.fileUrl.split('/').slice(-1)[0].split('.')[0];
@@ -903,7 +232,7 @@ const updateNotices = async (req, res) => {
         updateFields.fileUrl = null;
         updateFields.fileType = 'other';
       } else {
-        // Filter files to keep and delete
+       
         const filesToKeep = existingFiles.filter(file => 
           req.body.keepFiles.includes(file._id.toString())
         );
@@ -912,7 +241,7 @@ const updateNotices = async (req, res) => {
           !req.body.keepFiles.includes(file._id.toString())
         );
         
-        // Delete files not in keepFiles
+     
         for (const file of filesToDelete) {
           try {
             const publicId = file.url.split('/').slice(-1)[0].split('.')[0];
@@ -926,8 +255,7 @@ const updateNotices = async (req, res) => {
           }
         }
         
-        // Check if legacy fileUrl needs to be deleted
-        // We'll delete legacy fileUrl if there are files in the array to avoid confusion
+        
         if (existingNotice.fileUrl && filesToKeep.length > 0) {
           try {
             const publicId = existingNotice.fileUrl.split('/').slice(-1)[0].split('.')[0];
@@ -944,12 +272,12 @@ const updateNotices = async (req, res) => {
           updateFields.fileType = 'other';
         }
         
-        // Update files array with only kept files
+      
         updateFields.files = filesToKeep;
       }
     }
     
-    // Case 3: Add new files
+
     if (req.files && req.files.length > 0) {
       const newFiles = req.files.map(file => {
         const fileExtension = file.originalname.split('.').pop().toLowerCase();
@@ -971,13 +299,12 @@ const updateNotices = async (req, res) => {
         };
       });
       
-      // If files were previously handled, append new files to existing ones
-      // Otherwise, combine existing files (if not already handled) with new files
+ 
       updateFields.files = updateFields.files !== undefined 
         ? [...updateFields.files, ...newFiles] 
         : [...existingFiles, ...newFiles];
       
-      // Clear legacy fileUrl if we're now using the files array
+
       if (existingNotice.fileUrl) {
         updateFields.fileUrl = null;
         updateFields.fileType = 'other';
