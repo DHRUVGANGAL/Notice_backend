@@ -148,7 +148,7 @@ POST /admin/notices
 ```
 Headers:
 ```
-token: jwt_token_here
+Authorization: Bearer jwt_token_here
 ```
 Body (form-data):
 ```
@@ -156,7 +156,7 @@ title: Notice Title
 content: Notice content details
 category: General
 isImportant: true/false
-noticeFile: [file upload]
+files: [file upload]
 ```
 
 #### Update Notice
@@ -165,7 +165,7 @@ PUT /admin/update-notices/:id
 ```
 Headers:
 ```
-token: jwt_token_here
+Authorization: Bearer jwt_token_here
 ```
 Body (form-data):
 ```
@@ -173,7 +173,7 @@ title: Updated Title
 content: Updated content
 category: Academic
 isImportant: true/false
-noticeFile: [file upload]
+files: [file upload]
 ```
 
 #### Delete Notice
@@ -182,7 +182,7 @@ DELETE /admin/delete-notices/:id
 ```
 Headers:
 ```
-token: jwt_token_here
+Authorization: Bearer jwt_token_here
 ```
 
 #### Get Admin Notices
@@ -191,7 +191,7 @@ GET /admin/get-notices
 ```
 Headers:
 ```
-token: jwt_token_here
+Authorization: Bearer jwt_token_here
 ```
 
 ### User Authentication
@@ -234,5 +234,3 @@ Response:
 - Passwords are hashed using bcrypt
 - Authentication handled via JWT tokens
 - Input validation with Zod
-
-
