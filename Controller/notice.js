@@ -3,6 +3,9 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const config = require('../config');
+const admin = require('../Models/admin');
+const User= require('../Models/user');
+
 
 cloudinary.config({
   cloud_name: config.CLOUDINARY_CONFIG.CLOUD_NAME,
@@ -130,41 +133,48 @@ const upload = multer({
 //   }
 // };
 
+
+// controllers/noticeController.js - Fixed file type detection
 const createNotice = async (req, res) => {
   try {
     const adminId = req.userId;
-    
     if (!adminId) {
       return res.status(401).json({ message: 'Unauthorized: Admin ID not found' });
     }
-
+    
     const {
       title,
       content,
       category = 'General',
       isImportant = false
     } = req.body;
-
+    
     const noticeData = {
       title,
       content,
       CreaterId: adminId,
       category,
       isImportant: isImportant === 'true' || isImportant === true,
-      files: [] 
+      files: []
     };
-
- 
+    
     if (req.files && req.files.length > 0) {
       noticeData.files = req.files.map(file => {
         const fileExtension = file.originalname.split('.').pop().toLowerCase();
         let fileType = 'other';
         
+        // Improved file type detection
         if (['pdf'].includes(fileExtension)) {
           fileType = 'pdf';
         } else if (['doc', 'docx'].includes(fileExtension)) {
           fileType = 'doc';
-        } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(fileExtension)) {
+          fileType = 'image';
+        }
+        
+        // For Cloudinary URLs, check content type if available
+        if (file.resource_type === 'image' || 
+            (file.mimetype && file.mimetype.startsWith('image/'))) {
           fileType = 'image';
         }
         
@@ -174,15 +184,21 @@ const createNotice = async (req, res) => {
           originalName: file.originalname
         };
       });
+      
+      // Set a main file type for the notice based on first file
+      if (noticeData.files.length > 0) {
+        noticeData.fileType = noticeData.files[0].fileType;
+        noticeData.fileUrl = noticeData.files[0].url;
+      }
     }
-
+    
     if (req.body.expiryDate) {
       noticeData.expiryDate = req.body.expiryDate;
     }
-
+    
     const newNotice = new NoticeModel(noticeData);
     await newNotice.save();
-
+    
     res.status(201).json({
       success: true,
       message: 'Notice created successfully',
@@ -190,7 +206,6 @@ const createNotice = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating notice:', error);
-    
     if (error.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
@@ -198,7 +213,6 @@ const createNotice = async (req, res) => {
         errors: Object.values(error.errors).map(err => err.message)
       });
     }
-    
     res.status(500).json({
       success: false,
       message: 'Failed to create notice',
@@ -206,6 +220,84 @@ const createNotice = async (req, res) => {
     });
   }
 };
+
+
+// const createNotice = async (req, res) => {
+//   try {
+//     const adminId = req.userId;
+    
+//     if (!adminId) {
+//       return res.status(401).json({ message: 'Unauthorized: Admin ID not found' });
+//     }
+
+//     const {
+//       title,
+//       content,
+//       category = 'General',
+//       isImportant = false
+//     } = req.body;
+
+//     const noticeData = {
+//       title,
+//       content,
+//       CreaterId: adminId,
+//       category,
+//       isImportant: isImportant === 'true' || isImportant === true,
+//       files: [] 
+//     };
+
+ 
+//     if (req.files && req.files.length > 0) {
+//       noticeData.files = req.files.map(file => {
+//         const fileExtension = file.originalname.split('.').pop().toLowerCase();
+//         let fileType = 'other';
+        
+//         if (['pdf'].includes(fileExtension)) {
+//           fileType = 'pdf';
+//         } else if (['doc', 'docx'].includes(fileExtension)) {
+//           fileType = 'doc';
+//         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+//           fileType = 'image';
+//         }
+        
+//         return {
+//           url: file.secure_url || file.url || file.path,
+//           fileType: fileType,
+//           originalName: file.originalname
+//         };
+//       });
+//     }
+
+//     if (req.body.expiryDate) {
+//       noticeData.expiryDate = req.body.expiryDate;
+//     }
+
+//     const newNotice = new NoticeModel(noticeData);
+//     await newNotice.save();
+
+//     res.status(201).json({
+//       success: true,
+//       message: 'Notice created successfully',
+//       notice: newNotice
+//     });
+//   } catch (error) {
+//     console.error('Error creating notice:', error);
+    
+//     if (error.name === 'ValidationError') {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Validation error',
+//         errors: Object.values(error.errors).map(err => err.message)
+//       });
+//     }
+    
+//     res.status(500).json({
+//       success: false,
+//       message: 'Failed to create notice',
+//       error: error.message
+//     });
+//   }
+// };
 
 
 // const updateNotices = async (req, res) => {
@@ -793,13 +885,59 @@ const getNotices=async(req, res) => {
 }
 
 
+const notices = async (req, res) => {
+  try {
+   
+    const userId = req.userId;
+    
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    
+    const userDepartment = user.departmentName;
+    
+    
+    const departmentAdmins = await admin.find({ departmentName: userDepartment });
+    
+    
+    const departmentAdminIds = departmentAdmins.map(admin => admin._id);
+    
+    
+    const departmentNotices = await NoticeModel.find({
+      CreaterId: { $in: departmentAdminIds },
+      isActive: true
+    }).sort({ createdAt: -1 }); 
+    
+    return res.status(200).json({
+      success: true,
+      count: departmentNotices.length,
+      data: departmentNotices
+    });
+    
+  } catch (error) {
+    console.error("Error fetching notices:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching notices",
+      error: error.message
+    });
+  }
+};
+
+
+
+
 
 module.exports = {
   upload,
   createNotice,
   updateNotices,
   deleteNotices,
-  getNotices
+  getNotices,
+  notices
 };
 
 
