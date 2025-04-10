@@ -847,8 +847,25 @@ const updateNotices = async (req, res) => {
           console.error('Error deleting file from Cloudinary:', cloudinaryError);
         }
       }
-      // Clear the files array
+      
+      // Also delete the legacy fileUrl if it exists
+      if (existingNotice.fileUrl) {
+        try {
+          const publicId = existingNotice.fileUrl.split('/').slice(-1)[0].split('.')[0];
+          if (publicId) {
+            const resourceType = existingNotice.fileType === 'image' ? 'image' : 'raw';
+            await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+            console.log(`Deleted legacy file from Cloudinary: ${publicId}`);
+          }
+        } catch (cloudinaryError) {
+          console.error('Error deleting legacy file from Cloudinary:', cloudinaryError);
+        }
+      }
+      
+      // Clear both the files array and legacy fileUrl fields
       updateFields.files = [];
+      updateFields.fileUrl = null;
+      updateFields.fileType = 'other';
     }
     // Case 2: Keep only selected files (partial deletion)
     else if (req.body.keepFiles && Array.isArray(req.body.keepFiles)) {
@@ -867,7 +884,24 @@ const updateNotices = async (req, res) => {
             console.error('Error deleting file from Cloudinary:', cloudinaryError);
           }
         }
+        
+        // Also delete the legacy fileUrl if it exists
+        if (existingNotice.fileUrl) {
+          try {
+            const publicId = existingNotice.fileUrl.split('/').slice(-1)[0].split('.')[0];
+            if (publicId) {
+              const resourceType = existingNotice.fileType === 'image' ? 'image' : 'raw';
+              await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+              console.log(`Deleted legacy file from Cloudinary: ${publicId}`);
+            }
+          } catch (cloudinaryError) {
+            console.error('Error deleting legacy file from Cloudinary:', cloudinaryError);
+          }
+        }
+        
         updateFields.files = [];
+        updateFields.fileUrl = null;
+        updateFields.fileType = 'other';
       } else {
         // Filter files to keep and delete
         const filesToKeep = existingFiles.filter(file => 
@@ -890,6 +924,24 @@ const updateNotices = async (req, res) => {
           } catch (cloudinaryError) {
             console.error('Error deleting file from Cloudinary:', cloudinaryError);
           }
+        }
+        
+        // Check if legacy fileUrl needs to be deleted
+        // We'll delete legacy fileUrl if there are files in the array to avoid confusion
+        if (existingNotice.fileUrl && filesToKeep.length > 0) {
+          try {
+            const publicId = existingNotice.fileUrl.split('/').slice(-1)[0].split('.')[0];
+            if (publicId) {
+              const resourceType = existingNotice.fileType === 'image' ? 'image' : 'raw';
+              await cloudinary.uploader.destroy(`notices/${publicId}`, { resource_type: resourceType });
+              console.log(`Deleted legacy file from Cloudinary: ${publicId}`);
+            }
+          } catch (cloudinaryError) {
+            console.error('Error deleting legacy file from Cloudinary:', cloudinaryError);
+          }
+          
+          updateFields.fileUrl = null;
+          updateFields.fileType = 'other';
         }
         
         // Update files array with only kept files
@@ -924,6 +976,12 @@ const updateNotices = async (req, res) => {
       updateFields.files = updateFields.files !== undefined 
         ? [...updateFields.files, ...newFiles] 
         : [...existingFiles, ...newFiles];
+      
+      // Clear legacy fileUrl if we're now using the files array
+      if (existingNotice.fileUrl) {
+        updateFields.fileUrl = null;
+        updateFields.fileType = 'other';
+      }
     }
     
     updateFields.updatedAt = Date.now();
