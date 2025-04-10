@@ -71,6 +71,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Routes
 app.use('/admin', adminRouter);
 app.use('/user', userRouter);
+app.get('/',(req,res)=>{
+    res.send("heloo")
+})
+
 
 // Database connection
 let isConnected = false;
