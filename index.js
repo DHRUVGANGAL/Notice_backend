@@ -2,8 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const { adminRouter } = require('../Route/admin');
-const { userRouter } = require('../Route/user');
+const { adminRouter } = require('./Route/admin');
+const { userRouter } = require('./Route/user');
 require('dotenv').config();
 
 
